@@ -7,6 +7,7 @@ from exomiser_ml.data.create_features.add_features import add_features
 from exomiser_ml.data.split_data.split_train_and_test import split_train_and_test
 from exomiser_ml.models.logistic_regression import logistic_regression
 from exomiser_ml.post_process.post_process import post_process_test_dir
+from exomiser_ml.utils.write_metadata import RunMetadata, write_metadata_yaml
 
 
 def main():
@@ -28,6 +29,14 @@ def run_logistic_regression_pipeline(phenopacket_dir: Path, result_dir: Path, ou
     post_process_test_dir(test_dir=output_dir.joinpath("results_split/test"), phenopacket_dir=phenopacket_dir,
                           output_dir=output_dir)
     output_dir.joinpath("added_features").unlink(missing_ok=True)
+    metadata = RunMetadata(
+        test_size=test_size,
+        output_dir=output_dir,
+        model_type="LogisticRegression",
+        features_used=features,
+    )
+
+    write_metadata_yaml(metadata, output_dir)
 
 
 @click.command("run-lr")
