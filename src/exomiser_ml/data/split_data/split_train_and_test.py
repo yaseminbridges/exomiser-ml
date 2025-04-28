@@ -10,7 +10,7 @@ def split_train_and_test(input_dir: Path, test_size: float, output_dir: Path) ->
     random.seed(42)
     random.shuffle(result_files)
     split_idx = int(len(result_files) * (1 - test_size))
-    training_data = pl.concat([pl.read_csv(file) for file in result_files[:split_idx]])
+    training_data = pl.concat([pl.read_csv(file, separator="\t", infer_schema_length=0) for file in result_files[:split_idx]])
     training_data.write_csv(output_dir.joinpath("train/train.tsv"), separator="\t")
     [f.rename(output_dir.joinpath(f"test/{f.name}")) for f in result_files[split_idx:]]
 
