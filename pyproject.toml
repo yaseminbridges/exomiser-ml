@@ -8,3 +8,6 @@ dependencies = [
     "pheval>=0.5.4",
     "shap>=0.47.2",
 ]
+
+[project.scripts]
+run-pipeline = "exomiser_ml.main:run_lr_pipeline"
