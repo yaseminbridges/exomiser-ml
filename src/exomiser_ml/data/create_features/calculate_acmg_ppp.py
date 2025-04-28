@@ -40,14 +40,14 @@ class ACMGPPPCalculator:
     }
 
     @staticmethod
-    def normalize_input(acmg_evidence) -> Union[List[str], str]:
+    def normalize_input(acmg_evidence) -> Union[List[str], bool]:
         # Remove brackets and extra spaces, then split by space or comma
         try:
             acmg_evidence = re.sub(r'[\[\]]', '', acmg_evidence).strip()
             acmg_evidence = re.split(r'[ ,]+', acmg_evidence)
             return acmg_evidence
         except TypeError:
-            return ""
+            return False
 
     def parse_evidence(self, evidence) -> int:
         evidence = evidence.upper()
