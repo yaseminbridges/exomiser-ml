@@ -51,6 +51,8 @@ class ACMGPPPCalculator:
 
     def parse_evidence(self, evidence) -> int:
         evidence = evidence.upper()
+        if "PP5" in evidence or "BP6" in evidence:
+            return 0
         match = re.match(r'([BP])([A-Z]+)(\d)(_([A-Z]+))?', evidence)
 
         if match:
