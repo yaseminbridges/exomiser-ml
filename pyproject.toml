@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ml = "exomiser_ml.main:ml"
+ml-utils = "exomiser_ml.main:ml"
 
 [build-system]
 requires = ["setuptools"]
