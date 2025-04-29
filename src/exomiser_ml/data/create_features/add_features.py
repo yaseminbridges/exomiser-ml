@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import click
 import polars as pl
 from pheval.utils.file_utils import all_files
 
@@ -30,6 +31,16 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> N
         result = result.with_columns(pl.col("EXOMISER_ACMG_EVIDENCE").fill_null(""))
         labelled_variant = label_variant(phenopacket_path, result)
         acmg_ppp = labelled_variant.with_columns([
-            pl.col("EXOMISER_ACMG_EVIDENCE").map_elements(acmg_calculater.compute_posterior, return_dtype=pl.Float64).alias("ACMG_PPP")
+            pl.col("EXOMISER_ACMG_EVIDENCE").map_elements(acmg_calculater.compute_posterior,
+                                                          return_dtype=pl.Float64).alias("ACMG_PPP")
         ])
         acmg_ppp.write_csv(output_dir.joinpath(phenopacket_path.stem + EXOMISER_TSV_FILE_SUFFIX), separator="\t")
+
+
+@click.command("add-features")
+@click.option('--phenopacket-dir', "-p", type=Path, required=True, help="Path to the Phenopacket data directory.")
+@click.option('--result-dir', "-r", type=Path, required=True,
+              help="Path to the results directory containing Exomiser variants .tsv files.")
+@click.option('--output-dir', "-o", type=Path, required=True, help="Path to the output directory.")
+def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> None:
+    add_features(phenopacket_dir, result_dir, output_dir)
