@@ -22,7 +22,7 @@ def train_model(training_data: Path, features: List[str]) -> LogisticRegression:
     return model
 
 
-def test_model(test_dir: Path, model: LogisticRegression, features: List[str]) -> None:
+def test_model(test_dir: Path, model: LogisticRegression, features: List[str], output_dir: Path) -> None:
     for test_file in all_files(test_dir):
         df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
         extracted_features = df.select(features)
@@ -31,12 +31,12 @@ def test_model(test_dir: Path, model: LogisticRegression, features: List[str]) -
             print(f"Warning: 'NEW_SCORE' already exists in {test_file}. Replacing it.")
             df = df.drop("NEW_SCORE")
         df_with_new_scores = df.hstack(new_scores)
-        df_with_new_scores.write_csv(test_file, separator="\t")
+        df_with_new_scores.write_csv(output_dir.joinpath(test_file.name), separator="\t")
 
 
-def logistic_regression(training_data: Path, test_dir: Path, features: List[str]) -> None:
+def logistic_regression(training_data: Path, test_dir: Path, features: List[str], output_dir: Path) -> None:
     model = train_model(training_data, features)
-    test_model(test_dir, model, features)
+    test_model(test_dir, model, features, output_dir)
 
 
 def run_logistic_regression_pipeline(phenopacket_dir: Path, result_dir: Path, output_dir: Path, features: List[str],
@@ -49,9 +49,10 @@ def run_logistic_regression_pipeline(phenopacket_dir: Path, result_dir: Path, ou
     split_train_and_test(input_dir=output_dir.joinpath("added_features"),
                          output_dir=output_dir.joinpath("results_split"), test_size=test_size)
     logistic_regression(training_data=output_dir.joinpath("results_split/train/train.tsv"),
-                        test_dir=output_dir.joinpath("results_split/test"), features=features, )
+                        test_dir=output_dir.joinpath("results_split/test"), features=features, output_dir=output_dir.joinpath("raw_results"))
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
-    post_process_test_dir(test_dir=output_dir.joinpath("results_split/test"), phenopacket_dir=phenopacket_dir,
+    output_dir.joinpath("raw_results").mkdir(parents=True, exist_ok=True)
+    post_process_test_dir(test_dir=output_dir.joinpath("raw_results"), phenopacket_dir=phenopacket_dir,
                           output_dir=output_dir)
     shutil.rmtree(output_dir.joinpath("added_features"))
     metadata = RunMetadata(
@@ -75,8 +76,9 @@ def run_logistic_regression_pipeline(phenopacket_dir: Path, result_dir: Path, ou
 def run_logistic_regression(training_data: Path, test_dir: Path, features: List[str], output_dir: Path,
                             phenopacket_dir: Path) -> None:
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
-    logistic_regression(training_data, test_dir, list(features))
-    post_process_test_dir(test_dir=test_dir, phenopacket_dir=phenopacket_dir,
+    output_dir.joinpath("raw_results").mkdir(parents=True, exist_ok=True)
+    logistic_regression(training_data, test_dir, list(features), output_dir.joinpath("raw_results"))
+    post_process_test_dir(test_dir=output_dir.joinpath("raw_results"), phenopacket_dir=phenopacket_dir,
                           output_dir=output_dir)
     metadata = RunMetadata(
         test_size=None,
