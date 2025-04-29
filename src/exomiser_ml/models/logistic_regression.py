@@ -26,7 +26,10 @@ def test_model(test_dir: Path, model: LogisticRegression, features: List[str]) -
     for test_file in all_files(test_dir):
         df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
         extracted_features = df.select(features)
-        new_scores = pl.DataFrame({"NEW_SCORE": model.predict_proba(extracted_features)[:, 1]})
+        new_scores = pl.DataFrame({"NEW_SCORE": model.predict_proba(extracted_features.to_pandas())[:, 1]})
+        if "NEW_SCORE" in df.columns:
+            print(f"Warning: 'NEW_SCORE' already exists in {test_file}. Replacing it.")
+            df = df.drop("NEW_SCORE")
         df_with_new_scores = df.hstack(new_scores)
         df_with_new_scores.write_csv(test_file, separator="\t")
 
@@ -71,14 +74,15 @@ def run_logistic_regression_pipeline(phenopacket_dir: Path, result_dir: Path, ou
 @click.option('--phenopacket-dir', "-p", type=Path, required=True, help="Path to the Phenopacket data directory.")
 def run_logistic_regression(training_data: Path, test_dir: Path, features: List[str], output_dir: Path,
                             phenopacket_dir: Path) -> None:
-    logistic_regression(training_data, test_dir, features)
+    output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
+    logistic_regression(training_data, test_dir, list(features))
     post_process_test_dir(test_dir=test_dir, phenopacket_dir=phenopacket_dir,
                           output_dir=output_dir)
     metadata = RunMetadata(
         test_size=None,
         output_dir=output_dir,
         model_type="LogisticRegression",
-        features_used=features,
+        features_used=list(features),
         training_data=training_data,
         test_dir=test_dir
     )
