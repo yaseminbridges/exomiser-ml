@@ -43,4 +43,5 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> N
               help="Path to the results directory containing Exomiser variants .tsv files.")
 @click.option('--output-dir', "-o", type=Path, required=True, help="Path to the output directory.")
 def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
     add_features(phenopacket_dir, result_dir, output_dir)
