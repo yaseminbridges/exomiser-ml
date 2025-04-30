@@ -57,11 +57,11 @@ def run_logistic_regression_pipeline(phenopacket_dir: Path, result_dir: Path, ou
     shutil.rmtree(output_dir.joinpath("added_features"))
     metadata = RunMetadata(
         test_size=test_size,
-        output_dir=output_dir,
+        output_dir=str(output_dir),
         model_type="LogisticRegression",
         features_used=features,
-        training_data=output_dir.joinpath("results_split/train/train.tsv"),
-        test_dir=output_dir.joinpath("results_split/test")
+        training_data=str(output_dir.joinpath("results_split/train/train.tsv")),
+        test_dir=str(output_dir.joinpath("results_split/test"))
     )
     write_metadata_yaml(metadata, output_dir)
 
