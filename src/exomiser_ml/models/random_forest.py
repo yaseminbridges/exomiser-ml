@@ -58,7 +58,7 @@ def run_random_forest_pipeline(phenopacket_dir: Path, result_dir: Path, output_d
     metadata = RunMetadata(
         test_size=test_size,
         output_dir=str(output_dir),
-        model_type="LogisticRegression",
+        model_type="RandomForestClassifier",
         features_used=features,
         training_data=str(output_dir.joinpath("results_split/train/train.tsv")),
         test_dir=str(output_dir.joinpath("results_split/test"))
@@ -83,7 +83,7 @@ def run_random_forest(training_data: Path, test_dir: Path, features: List[str], 
     metadata = RunMetadata(
         test_size=None,
         output_dir=output_dir,
-        model_type="LogisticRegression",
+        model_type="RandomForestClassifier",
         features_used=list(features),
         training_data=training_data,
         test_dir=test_dir
