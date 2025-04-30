@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pathlib import Path
 from typing import List, Union
@@ -16,7 +16,7 @@ class RunMetadata:
     training_data: Path
     test_dir: Path
     features_used: List[str]
-    timestamp: datetime = datetime.now()
+    timestamp: datetime = field(default_factory=datetime.now)
 
 
 
