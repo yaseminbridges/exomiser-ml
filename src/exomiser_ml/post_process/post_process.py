@@ -21,7 +21,7 @@ def post_process_test_dir(test_dir: Path, phenopacket_dir: Path, output_dir: Pat
                                 phenopacket_dir=phenopacket_dir,
                                 sort_order=SortOrder.DESCENDING,
                                 output_dir=output_dir,
-                                result_path=Path(str(output_file.name).replace("-exomiser.variants.tsv", "")))
+                                result_path=Path(str(output_file.name).replace("-exomiser.variants", "")))
 
 
 @click.command("post-process")
