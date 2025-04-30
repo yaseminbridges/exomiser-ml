@@ -11,10 +11,10 @@ from serde import to_dict, serde
 @dataclass
 class RunMetadata:
     test_size: Union[float, None]
-    output_dir: Path
+    output_dir: str
     model_type: str
-    training_data: Path
-    test_dir: Path
+    training_data: str
+    test_dir: str
     features_used: List[str]
     timestamp: datetime = field(default_factory=datetime.now)
 
