@@ -13,9 +13,11 @@ from exomiser_ml.utils.write_metadata import RunMetadata, write_metadata_yaml
 
 
 def train_model(training_data: Path, features: List[str]) -> xgb.XGBClassifier:
-    training_data_df = pl.read_csv(training_data, separator="\t", infer_schema_length=0)
+    training_data_df = pl.read_csv(training_data, separator="\t")
     X = training_data_df.select(features)
-    y = training_data_df.select(["CAUSATIVE_VARIANT"])
+    y = training_data_df.select([
+        pl.when(pl.col("CAUSATIVE_VARIANT") == True).then(1).otherwise(0).alias("CAUSATIVE_VARIANT")
+    ])
     model = xgb.XGBClassifier(random_state=42)
     model.fit(X.to_pandas(), y.to_pandas().squeeze())
     return model
@@ -23,7 +25,7 @@ def train_model(training_data: Path, features: List[str]) -> xgb.XGBClassifier:
 
 def test_model(test_dir: Path, model: xgb.XGBClassifier, features: List[str], output_dir: Path) -> None:
     for test_file in all_files(test_dir):
-        df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
+        df = pl.read_csv(test_file, separator="\t")
         extracted_features = df.select(features)
         new_scores = pl.DataFrame({"NEW_SCORE": model.predict_proba(extracted_features.to_pandas())[:, 1]})
         if "NEW_SCORE" in df.columns:
@@ -97,7 +99,7 @@ def run_xgboost(training_data: Path, test_dir: Path, features: List[str], output
 @click.option('--output-dir', "-o", type=Path, required=True, help="Path to the output directory.")
 @click.option('--features', "-f", multiple=True, required=True, help='List of features to extract.')
 @click.option('--test-size', "-t", type=float, default=0.2, help='Proportion of data to use for testing.')
-def run_lr_pipeline(phenopacket_dir: Path, result_dir: Path, output_dir: Path, features: List[str], test_size: float):
+def run_xgb_pipeline(phenopacket_dir: Path, result_dir: Path, output_dir: Path, features: List[str], test_size: float):
     run_xgboost_pipeline(
         phenopacket_dir=phenopacket_dir,
         result_dir=result_dir,
