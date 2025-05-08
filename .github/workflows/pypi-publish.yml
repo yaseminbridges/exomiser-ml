@@ -1,0 +1,26 @@
+name: Publish Python Package
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  build-and-publish:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          activate-environment: true
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Publish to PyPI
+        run: uv publish --token ${{ secrets.EXOMISER_ML_TOKEN }}
