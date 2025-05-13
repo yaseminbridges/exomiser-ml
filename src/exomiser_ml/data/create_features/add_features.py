@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import click
 import polars as pl
 from pheval.utils.file_utils import all_files
 
@@ -12,7 +11,7 @@ EXOMISER_TSV_FILE_SUFFIX = "-exomiser.variants.tsv"
 
 def get_result(phenopacket_path: Path, result_dir: Path) -> pl.DataFrame:
     result_path = result_dir.joinpath(phenopacket_path.stem + EXOMISER_TSV_FILE_SUFFIX)
-    return pl.read_csv(result_path, separator="\t", infer_schema_length=100000)
+    return pl.read_csv(result_path, separator="\t", infer_schema_length=None)
 
 
 def label_variant(phenopacket_path: Path, result: pl.DataFrame) -> pl.DataFrame:
@@ -37,11 +36,3 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> N
         acmg_ppp.write_csv(output_dir.joinpath(phenopacket_path.stem + EXOMISER_TSV_FILE_SUFFIX), separator="\t")
 
 
-@click.command("add-features")
-@click.option('--phenopacket-dir', "-p", type=Path, required=True, help="Path to the Phenopacket data directory.")
-@click.option('--result-dir', "-r", type=Path, required=True,
-              help="Path to the results directory containing Exomiser variants .tsv files.")
-@click.option('--output-dir', "-o", type=Path, required=True, help="Path to the output directory.")
-def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    add_features(phenopacket_dir, result_dir, output_dir)
