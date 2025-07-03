@@ -6,6 +6,7 @@ import click
 from exomiser_ml.data.create_features.add_features import add_features
 from exomiser_ml.data.split_data.split_train_and_test import split_train_and_test
 from exomiser_ml.models.classifier_models import run_model, run_pipeline
+from exomiser_ml.models.logistic_regression_manual_sigmoid_calculation import run_manual_logistic_regression_model
 from exomiser_ml.post_process.post_process import post_process_test_dir
 
 training_data_option = click.option(
@@ -48,6 +49,11 @@ test_size_option = click.option(
     help='Proportion of data to use for testing.'
 )
 
+coefficients_option = click.option(
+    '--coefficients_option', '-c', multiple=True, required=True,
+    help="Coefficients of the logistic regression model."
+)
+
 model_option = click.option(
     '--model', '-m',
     type=click.Choice(["LOGISTIC_REGRESSION", "RANDOM_FOREST", "XGBOOST_CLASSIFIER"]),
@@ -58,6 +64,11 @@ model_option = click.option(
 score_option = click.option(
     '--score', '-s', type=str, default="NEW_SCORE",
     help='Score to rank.'
+)
+
+intercept_option = click.option(
+    '--intercept', '-y', type=float,
+    help='Intercept of the Logistic Regression model.'
 )
 
 @click.command("run-model")
@@ -121,3 +132,15 @@ def split_data_command(input_dir: Path, test_size: float, output_dir: Path) -> N
 def post_process_test_dir_command(test_dir: Path, phenopacket_dir: Path, output_dir: Path, score: str = "NEW_SCORE") -> None:
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
     post_process_test_dir(test_dir, phenopacket_dir, output_dir, score)
+
+@click.command("manual-predict")
+@test_dir_option
+@features_option
+@coefficients_option
+@intercept_option
+@output_dir_option
+@phenopacket_dir_option
+def run_manual_logistic_regression_model_command(test_dir: Path, features: List[str], coefficients: List[float],
+                                         intercept: float, output_dir: Path, phenopacket_dir: Path):
+    output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
+    run_manual_logistic_regression_model(test_dir, features, coefficients, intercept, output_dir, phenopacket_dir)
