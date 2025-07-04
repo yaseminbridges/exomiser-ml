@@ -50,7 +50,7 @@ test_size_option = click.option(
 )
 
 coefficients_option = click.option(
-    '--coefficients_option', '-c', multiple=True, required=True,
+    '--coefficients', '-c', multiple=True, required=True,
     help="Coefficients of the logistic regression model."
 )
 
