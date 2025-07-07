@@ -143,4 +143,5 @@ def post_process_test_dir_command(test_dir: Path, phenopacket_dir: Path, output_
 def run_manual_logistic_regression_model_command(test_dir: Path, features: List[str], coefficients: List[float],
                                          intercept: float, output_dir: Path, phenopacket_dir: Path):
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
+    output_dir.joinpath("raw_results").mkdir(parents=True, exist_ok=True)
     run_manual_logistic_regression_model(test_dir, features, coefficients, intercept, output_dir, phenopacket_dir)
