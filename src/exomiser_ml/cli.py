@@ -71,6 +71,13 @@ intercept_option = click.option(
     help='Intercept of the Logistic Regression model.'
 )
 
+filter_clinvar_option = click.option(
+    "--filter-clinvar/--no-filter-clinvar",
+    default=True,
+    help="Enable or disable ClinVar evidence filtering (default: enabled)"
+)
+
+
 @click.command("run-model")
 @training_data_option
 @test_dir_option
@@ -91,29 +98,33 @@ def run_model_command(training_data: Path, test_dir: Path, features: List[str], 
 @features_option
 @test_size_option
 @model_option
+@filter_clinvar_option
 def run_model_pipeline(
         phenopacket_dir: Path,
         result_dir: Path,
         output_dir: Path,
         features: List[str],
         test_size: float,
-        model: str
+        model: str,
+        filter_clinvar: bool,
 ):
     run_pipeline(phenopacket_dir=phenopacket_dir,
                  result_dir=result_dir,
                  output_dir=output_dir,
                  features=features,
                  test_size=test_size,
-                 model=model)
+                 model=model,
+                 filter_clinvar=filter_clinvar)
 
 
 @click.command("add-features")
 @phenopacket_dir_option
 @result_dir_option
 @output_dir_option
-def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path) -> None:
+@filter_clinvar_option
+def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filter_clinvar: bool) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    add_features(phenopacket_dir, result_dir, output_dir)
+    add_features(phenopacket_dir, result_dir, output_dir, filter_clinvar)
 
 
 @click.command("split-data")
@@ -129,9 +140,11 @@ def split_data_command(input_dir: Path, test_size: float, output_dir: Path) -> N
 @phenopacket_dir_option
 @output_dir_option
 @score_option
-def post_process_test_dir_command(test_dir: Path, phenopacket_dir: Path, output_dir: Path, score: str = "NEW_SCORE") -> None:
+def post_process_test_dir_command(test_dir: Path, phenopacket_dir: Path, output_dir: Path,
+                                  score: str = "NEW_SCORE") -> None:
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
     post_process_test_dir(test_dir, phenopacket_dir, output_dir, score)
+
 
 @click.command("manual-predict")
 @test_dir_option
@@ -141,7 +154,7 @@ def post_process_test_dir_command(test_dir: Path, phenopacket_dir: Path, output_
 @output_dir_option
 @phenopacket_dir_option
 def run_manual_logistic_regression_model_command(test_dir: Path, features: List[str], coefficients: List[float],
-                                         intercept: float, output_dir: Path, phenopacket_dir: Path):
+                                                 intercept: float, output_dir: Path, phenopacket_dir: Path):
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
     output_dir.joinpath("raw_results").mkdir(parents=True, exist_ok=True)
     run_manual_logistic_regression_model(test_dir, features, coefficients, intercept, output_dir, phenopacket_dir)

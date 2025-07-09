@@ -81,7 +81,8 @@ def run_pipeline(
         output_dir: Path,
         features: List[str],
         test_size: float,
-        model: str
+        model: str,
+        filter_clinvar: bool,
 ):
     model_cls = ModelType[model.upper()].value
     added_features_dir = output_dir.joinpath("added_features")
@@ -93,7 +94,7 @@ def run_pipeline(
 
     for dir_path in [added_features_dir, train_dir, test_dir, raw_results_dir, pheval_results_dir, model_dir]:
         dir_path.mkdir(parents=True, exist_ok=True)
-    add_features(phenopacket_dir=phenopacket_dir, result_dir=result_dir, output_dir=added_features_dir)
+    add_features(phenopacket_dir=phenopacket_dir, result_dir=result_dir, output_dir=added_features_dir, filter_clinvar=filter_clinvar)
     split_train_and_test(input_dir=added_features_dir, output_dir=output_dir.joinpath("results_split"),
                          test_size=test_size)
     trained_model = train_model(train_dir.joinpath("train.tsv"), features, model_cls, output_dir.joinpath(f"model/{model}"))
