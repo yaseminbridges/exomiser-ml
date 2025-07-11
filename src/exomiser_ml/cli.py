@@ -4,7 +4,7 @@ from typing import List
 import click
 
 from exomiser_ml.data.create_features.add_features import add_features
-from exomiser_ml.data.split_data.split_train_and_test import split_train_and_test
+from exomiser_ml.data.split_data.split_train_and_test import split_train_and_test, create_training_data
 from exomiser_ml.models.classifier_models import run_model, run_pipeline
 from exomiser_ml.models.logistic_regression_manual_sigmoid_calculation import run_manual_logistic_regression_model
 from exomiser_ml.post_process.post_process import post_process_test_dir
@@ -133,6 +133,12 @@ def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Pa
 @output_dir_option
 def split_data_command(input_dir: Path, test_size: float, output_dir: Path) -> None:
     split_train_and_test(input_dir=input_dir, test_size=test_size, output_dir=output_dir)
+
+@click.command("create-training-data")
+@input_dir_option
+@output_dir_option
+def create_training_data_command(input_dir: Path, output_dir: Path) -> None:
+    create_training_data(input_dir=input_dir, output_dir=output_dir)
 
 
 @click.command("post-process")
