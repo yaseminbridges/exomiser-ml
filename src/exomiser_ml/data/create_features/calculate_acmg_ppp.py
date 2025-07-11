@@ -51,6 +51,8 @@ class ACMGPPPCalculator:
 
     def parse_evidence(self, evidence: str, filter_clinvar: bool) -> int:
         evidence = evidence.upper()
+        if "BS4" in evidence:
+            return 0
         if filter_clinvar:
             if "PP5" in evidence or "BP6" in evidence:
                 return 0
