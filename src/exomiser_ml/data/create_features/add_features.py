@@ -23,7 +23,7 @@ def label_variant(phenopacket_path: Path, result: pl.DataFrame) -> pl.DataFrame:
     ])
 
 
-def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filter_clinvar: bool) -> None:
+def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filter_clinvar: bool, filter_bs4: bool) -> None:
     acmg_calculater = ACMGPPPCalculator()
     for phenopacket_path in all_files(phenopacket_dir):
         result = get_result(phenopacket_path, result_dir)
@@ -31,7 +31,7 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filt
         labelled_variant = label_variant(phenopacket_path, result)
         acmg_ppp = labelled_variant.with_columns([
             pl.col("EXOMISER_ACMG_EVIDENCE").map_elements(
-                lambda x: acmg_calculater.compute_posterior(x, filter_clinvar),
+                lambda x: acmg_calculater.compute_posterior(x, filter_clinvar, filter_bs4),
                 return_dtype=pl.Float64
             ).alias("ACMG_PPP")
         ])
