@@ -16,7 +16,7 @@ def ml():
 
 ml.add_command(add_features_command)
 ml.add_command(split_data_command)
-ml.add_command(create_training_data_command())
+ml.add_command(create_training_data_command)
 ml.add_command(post_process_test_dir_command)
 ml.add_command(run_model_command)
 ml.add_command(run_model_pipeline)
