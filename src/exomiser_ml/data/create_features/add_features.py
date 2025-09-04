@@ -27,7 +27,11 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filt
     acmg_calculater = ACMGPPPCalculator()
     for phenopacket_path in all_files(phenopacket_dir):
         result = get_result(phenopacket_path, result_dir)
-        result = result.with_columns(pl.col("EXOMISER_ACMG_EVIDENCE").fill_null(""))
+        result = result.with_columns([
+            pl.col("EXOMISER_ACMG_EVIDENCE").fill_null(""),
+            pl.col("MAX_PATH").fill_null(0),
+            pl.col("MAX_FREQ").fill_null(0),
+        ])
         labelled_variant = label_variant(phenopacket_path, result)
         acmg_ppp = labelled_variant.with_columns([
             pl.col("EXOMISER_ACMG_EVIDENCE").map_elements(
