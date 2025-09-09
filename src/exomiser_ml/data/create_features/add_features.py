@@ -39,6 +39,17 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filt
                 return_dtype=pl.Float64
             ).alias("ACMG_PPP")
         ])
+        acmg_ppp = acmg_ppp.with_columns(
+            (pl.col("EXOMISER_ACMG_EVIDENCE") == "").alias("ACMG_PPP_NULL")
+        )
+        mean_val = acmg_ppp.filter(~pl.col("ACMG_PPP_NULL"))["ACMG_PPP"].mean()
+        print(f"Mean value for ACMG_PPP is: {mean_val}")
+        acmg_ppp = acmg_ppp.with_columns(
+            pl.when(pl.col("ACMG_PPP_NULL"))
+            .then(mean_val)
+            .otherwise(pl.col("ACMG_PPP"))
+            .alias("ACMG_PPP")
+        )
         acmg_ppp.write_csv(output_dir.joinpath(phenopacket_path.stem + EXOMISER_TSV_FILE_SUFFIX), separator="\t")
 
 
