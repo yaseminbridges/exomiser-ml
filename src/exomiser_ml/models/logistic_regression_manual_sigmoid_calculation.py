@@ -24,7 +24,7 @@ def manual_predict_proba_on_test_dir(test_dir: Path, features: List[str], coeffi
     coefficients = np.array(coefficients)
     for test_file in all_files(test_dir):
         df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
-        extracted_features = df.select(features).to_numpy()
+        extracted_features = df.select(features).cast(pl.Float64).to_numpy()
         probabilities = manual_predict_proba(extracted_features, coefficients, intercept)
         new_scores = pl.DataFrame({"NEW_SCORE": probabilities})
         if "NEW_SCORE" in df.columns:
@@ -37,6 +37,7 @@ def manual_predict_proba_on_test_dir(test_dir: Path, features: List[str], coeffi
 def run_manual_logistic_regression_model(test_dir: Path, features: List[str], coefficients: List[float],
                                          intercept: float, output_dir: Path, phenopacket_dir: Path):
     raw_results_dir = output_dir.joinpath("raw_results")
+    coefficients = [float(c) for c in coefficients]
     manual_predict_proba_on_test_dir(test_dir, features, coefficients, intercept, raw_results_dir)
     post_process_test_dir(test_dir=raw_results_dir, phenopacket_dir=phenopacket_dir, output_dir=output_dir)
     metadata = RunMetadata(
