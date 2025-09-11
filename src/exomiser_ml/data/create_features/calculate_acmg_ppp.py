@@ -49,13 +49,16 @@ class ACMGPPPCalculator:
         except TypeError:
             return False
 
-    def parse_evidence(self, evidence: str, filter_clinvar: bool, filter_bs4: bool) -> int:
+    def parse_evidence(self, evidence: str, filter_clinvar: bool, filter_bs4: bool, filter_pp4: bool) -> int:
         evidence = evidence.upper()
         if filter_bs4:
             if "BS4" in evidence:
                 return 0
         if filter_clinvar:
             if "PP5" in evidence or "BP6" in evidence:
+                return 0
+        if filter_pp4:
+            if "PP4" in evidence:
                 return 0
         match = re.match(r'([BP])([A-Z]+)(\d)(_([A-Z]+))?', evidence)
 
@@ -88,9 +91,9 @@ class ACMGPPPCalculator:
         return AcmgClassification.BENIGN
 
 
-    def compute_posterior(self, evidence_string: str, filter_clinvar: bool, filter_bs4: bool) -> float:
+    def compute_posterior(self, evidence_string: str, filter_clinvar: bool, filter_bs4: bool, filter_pp4: bool) -> float:
         normalized = self.normalize_input(evidence_string)
         if not normalized:
             return 0  # Or 0.0 or np.nan depending on your context
-        points = sum(self.parse_evidence(e, filter_clinvar, filter_bs4) for e in normalized)
+        points = sum(self.parse_evidence(e, filter_clinvar, filter_bs4, filter_pp4) for e in normalized)
         return self.calc_post_prob_path(points)

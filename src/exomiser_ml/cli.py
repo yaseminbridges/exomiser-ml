@@ -70,17 +70,25 @@ intercept_option = click.option(
     '--intercept', '-y', type=float,
     help='Intercept of the Logistic Regression model.'
 )
-
-filter_clinvar_option = click.option(
-    "--filter-clinvar/--no-filter-clinvar",
-    default=True,
-    help="Enable or disable ClinVar evidence filtering (default: enabled)"
+filter_bs4_option = click.option(
+    "--filter-bs4",
+    is_flag=True,
+    default=False,
+    help="Enable filtering for BS4"
 )
 
-filter_bs4_option = click.option(
-    "--filter-bs4/--no-filter-bs4",
-    default=True,
-    help="Enable or disable filtering for BS4 (default: enabled)"
+filter_clinvar_option = click.option(
+    "--filter-clinvar",
+    is_flag=True,
+    default=False,
+    help="Enable ClinVar evidence filtering"
+)
+
+filter_pp4_option = click.option(
+    "--filter-pp4",
+    is_flag=True,
+    default=False,
+    help="Enable filtering for PP4"
 )
 
 @click.command("run-model")
@@ -105,6 +113,7 @@ def run_model_command(training_data: Path, test_dir: Path, features: List[str], 
 @model_option
 @filter_clinvar_option
 @filter_bs4_option
+@filter_pp4_option
 def run_model_pipeline(
         phenopacket_dir: Path,
         result_dir: Path,
@@ -113,7 +122,8 @@ def run_model_pipeline(
         test_size: float,
         model: str,
         filter_clinvar: bool,
-        filter_bs4: bool
+        filter_bs4: bool,
+        filter_pp4: bool
 ):
     run_pipeline(phenopacket_dir=phenopacket_dir,
                  result_dir=result_dir,
@@ -122,7 +132,8 @@ def run_model_pipeline(
                  test_size=test_size,
                  model=model,
                  filter_clinvar=filter_clinvar,
-                 filter_bs4=filter_bs4)
+                 filter_bs4=filter_bs4,
+                 filter_pp4=filter_pp4)
 
 
 @click.command("add-features")
@@ -131,9 +142,10 @@ def run_model_pipeline(
 @output_dir_option
 @filter_clinvar_option
 @filter_bs4_option
-def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filter_clinvar: bool, filter_bs4: bool) -> None:
+@filter_pp4_option
+def add_features_command(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filter_clinvar: bool, filter_bs4: bool, filter_pp4: bool) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    add_features(phenopacket_dir, result_dir, output_dir, filter_clinvar, filter_bs4)
+    add_features(phenopacket_dir, result_dir, output_dir, filter_clinvar, filter_bs4, filter_pp4)
 
 
 @click.command("split-data")
