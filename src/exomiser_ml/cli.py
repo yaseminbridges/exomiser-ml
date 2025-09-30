@@ -6,7 +6,7 @@ import click
 from exomiser_ml.data.create_features.add_features import add_features
 from exomiser_ml.data.split_data.split_train_and_test import split_train_and_test, create_training_data
 from exomiser_ml.models.classifier_models import run_model, run_pipeline
-from exomiser_ml.models.generalised_additive_model import train_and_test_gam, run_manual_ebm_model
+from exomiser_ml.models.generalised_additive_model import train_and_test_gam, manual_predict_ebm
 from exomiser_ml.models.logistic_regression_manual_sigmoid_calculation import run_manual_logistic_regression_model
 from exomiser_ml.post_process.post_process import post_process_test_dir
 
@@ -18,6 +18,11 @@ training_data_option = click.option(
 test_dir_option = click.option(
     '--test-dir', '-e', type=Path, required=True,
     help="Path to the test data directory."
+)
+
+payload_option = click.option(
+    '--payload', '-p', type=Path, required=True,
+    help="Path to the JSON payload for EBM."
 )
 
 features_option = click.option(
@@ -208,9 +213,11 @@ def run_manual_logistic_regression_model_command(test_dir: Path, features: List[
 
 @click.command("manual-predict-ebm")
 @test_dir_option
+@payload_option
 @output_dir_option
 @export_json_option
 @phenopacket_dir_option
-def run_manual_ebm(test_dir: Path, export_json: Path, output_dir: Path, phenopacket_dir: Path):
-    run_manual_ebm_model(test_dir=test_dir, export_json=export_json, output_dir=output_dir,
+def run_manual_ebm(test_dir: Path, payload: Path, output_dir: Path, phenopacket_dir: Path):
+    manual_predict_ebm(test_dir=test_dir, payload_path=payload, output_dir=output_dir,
                          phenopacket_dir=phenopacket_dir)
+
