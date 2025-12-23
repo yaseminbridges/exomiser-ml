@@ -16,10 +16,12 @@ from enum import Enum
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
+
 class ModelType(Enum):
     LOGISTIC_REGRESSION = LogisticRegression
     RANDOM_FOREST = RandomForestClassifier
     XGBOOST_CLASSIFIER = XGBClassifier
+
 
 def save_model(model: Type[ClassifierMixin], model_path: Path):
     if isinstance(model, XGBClassifier):
@@ -27,12 +29,16 @@ def save_model(model: Type[ClassifierMixin], model_path: Path):
     else:
         joblib.dump(model, model_path.with_suffix(".pkl"))
 
+
 def train_model(
         training_data: Path,
         features: List[str],
         model_cls: Type[ClassifierMixin],
         model_path: Path) -> ClassifierMixin:
     training_data_df = pl.read_csv(training_data, separator="\t", infer_schema_length=0)
+    training_data_df = training_data_df.filter(
+        pl.col("CONTRIBUTING_VARIANT").cast(pl.Int64) == 1  # noqa
+    )
     X = training_data_df.select(features)
     y = training_data_df.select(["CAUSATIVE_VARIANT"])
     model = model_cls(random_state=42)
@@ -96,10 +102,12 @@ def run_pipeline(
 
     for dir_path in [added_features_dir, train_dir, test_dir, raw_results_dir, pheval_results_dir, model_dir]:
         dir_path.mkdir(parents=True, exist_ok=True)
-    add_features(phenopacket_dir=phenopacket_dir, result_dir=result_dir, output_dir=added_features_dir, filter_clinvar=filter_clinvar, filter_bs4=filter_bs4, filter_pp4=filter_pp4)
+    add_features(phenopacket_dir=phenopacket_dir, result_dir=result_dir, output_dir=added_features_dir,
+                 filter_clinvar=filter_clinvar, filter_bs4=filter_bs4, filter_pp4=filter_pp4)
     split_train_and_test(input_dir=added_features_dir, output_dir=output_dir.joinpath("results_split"),
                          test_size=test_size)
-    trained_model = train_model(train_dir.joinpath("train.tsv"), features, model_cls, output_dir.joinpath(f"model/{model}"))
+    trained_model = train_model(train_dir.joinpath("train.tsv"), features, model_cls,
+                                output_dir.joinpath(f"model/{model}"))
     test_model(test_dir, trained_model, features, raw_results_dir)
     post_process_test_dir(test_dir=raw_results_dir, phenopacket_dir=phenopacket_dir, output_dir=output_dir)
     shutil.rmtree(added_features_dir)
