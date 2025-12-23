@@ -215,7 +215,6 @@ def run_manual_logistic_regression_model_command(test_dir: Path, features: List[
 @test_dir_option
 @payload_option
 @output_dir_option
-@export_json_option
 @phenopacket_dir_option
 def run_manual_ebm(test_dir: Path, payload: Path, output_dir: Path, phenopacket_dir: Path):
     manual_predict_ebm(test_dir=test_dir, payload_path=payload, output_dir=output_dir,
