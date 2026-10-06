@@ -6,8 +6,7 @@ from enum import Enum
 
 from exomiser_ml.data.create_features.calculate_acmg_ppp import ACMGPPPCalculator
 from exomiser_ml.data.create_features.get_causative_variant import extract_causative_variants
-
-EXOMISER_TSV_FILE_SUFFIX = "-exomiser.variants.tsv"
+from exomiser_ml.utils.io import find_exomiser_result, read_result, write_result, EXOMISER_PARQUET_FILE_SUFFIX
 
 class ModeOfInheritance(Enum):
     AUTOSOMAL_DOMINANT = 1
@@ -22,8 +21,7 @@ class ModeOfInheritance(Enum):
     MT = 3
 
 def get_result(phenopacket_path: Path, result_dir: Path) -> pl.DataFrame:
-    result_path = result_dir.joinpath(phenopacket_path.stem + EXOMISER_TSV_FILE_SUFFIX)
-    return pl.read_csv(result_path, separator="\t", infer_schema_length=None)
+    return read_result(find_exomiser_result(result_dir, phenopacket_path.stem))
 
 
 def label_variant(phenopacket_path: Path, result: pl.DataFrame) -> pl.DataFrame:
@@ -76,4 +74,4 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filt
             .alias("ACMG_PPP_AVE")
         )
 
-        acmg_ppp.write_csv(output_dir.joinpath(phenopacket_path.stem + EXOMISER_TSV_FILE_SUFFIX), separator="\t")
+        write_result(acmg_ppp, output_dir.joinpath(phenopacket_path.stem + EXOMISER_PARQUET_FILE_SUFFIX))

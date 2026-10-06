@@ -5,6 +5,7 @@ import numpy as np
 from pheval.utils.file_utils import all_files
 
 from exomiser_ml.post_process.post_process import post_process_test_dir
+from exomiser_ml.utils.io import read_result, write_result
 from exomiser_ml.utils.write_metadata import RunMetadata, write_metadata_yaml
 
 
@@ -23,7 +24,7 @@ def manual_predict_proba_on_test_dir(test_dir: Path, features: List[str], coeffi
                               output_dir: Path) -> None:
     coefficients = np.array(coefficients)
     for test_file in all_files(test_dir):
-        df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
+        df = read_result(test_file)
         extracted_features = df.select(features).cast(pl.Float64).to_numpy()
         probabilities = manual_predict_proba(extracted_features, coefficients, intercept)
         new_scores = pl.DataFrame({"NEW_SCORE": probabilities})
@@ -31,7 +32,7 @@ def manual_predict_proba_on_test_dir(test_dir: Path, features: List[str], coeffi
             print(f"Warning: 'NEW_SCORE' already exists in {test_file}. Replacing it.")
             df = df.drop("NEW_SCORE")
         df_with_new_scores = df.hstack(new_scores)
-        df_with_new_scores.write_csv(output_dir.joinpath(test_file.name), separator="\t")
+        write_result(df_with_new_scores, output_dir.joinpath(test_file.name))
 
 
 def run_manual_logistic_regression_model(test_dir: Path, features: List[str], coefficients: List[float],

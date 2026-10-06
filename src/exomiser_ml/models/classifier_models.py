@@ -11,6 +11,7 @@ from xgboost import XGBClassifier
 from exomiser_ml.data.create_features.add_features import add_features
 from exomiser_ml.data.split_data.split_train_and_test import split_train_and_test
 from exomiser_ml.post_process.post_process import post_process_test_dir
+from exomiser_ml.utils.io import read_result, write_result
 from exomiser_ml.utils.write_metadata import RunMetadata, write_metadata_yaml
 from enum import Enum
 from sklearn.linear_model import LogisticRegression
@@ -35,7 +36,7 @@ def train_model(
         features: List[str],
         model_cls: Type[ClassifierMixin],
         model_path: Path) -> ClassifierMixin:
-    training_data_df = pl.read_csv(training_data, separator="\t", infer_schema_length=0)
+    training_data_df = read_result(training_data)
     training_data_df = training_data_df.filter(
         pl.col("CONTRIBUTING_VARIANT").cast(pl.Int64) == 1  # noqa
     )
@@ -49,14 +50,14 @@ def train_model(
 
 def test_model(test_dir: Path, model: ClassifierMixin, features: List[str], output_dir: Path) -> None:
     for test_file in all_files(test_dir):
-        df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
+        df = read_result(test_file)
         extracted_features = df.select(features)
         new_scores = pl.DataFrame({"NEW_SCORE": model.predict_proba(extracted_features.to_pandas())[:, 1]})
         if "NEW_SCORE" in df.columns:
             print(f"Warning: 'NEW_SCORE' already exists in {test_file}. Replacing it.")
             df = df.drop("NEW_SCORE")
         df_with_new_scores = df.hstack(new_scores)
-        df_with_new_scores.write_csv(output_dir.joinpath(test_file.name), separator="\t")
+        write_result(df_with_new_scores, output_dir.joinpath(test_file.name))
 
 
 def run_model(training_data: Path, test_dir: Path, features: List[str], output_dir: Path, phenopacket_dir: Path,
@@ -106,7 +107,7 @@ def run_pipeline(
                  filter_clinvar=filter_clinvar, filter_bs4=filter_bs4, filter_pp4=filter_pp4)
     split_train_and_test(input_dir=added_features_dir, output_dir=output_dir.joinpath("results_split"),
                          test_size=test_size)
-    trained_model = train_model(train_dir.joinpath("train.tsv"), features, model_cls,
+    trained_model = train_model(train_dir.joinpath("train.parquet"), features, model_cls,
                                 output_dir.joinpath(f"model/{model}"))
     test_model(test_dir, trained_model, features, raw_results_dir)
     post_process_test_dir(test_dir=raw_results_dir, phenopacket_dir=phenopacket_dir, output_dir=output_dir)
@@ -116,7 +117,7 @@ def run_pipeline(
         output_dir=str(output_dir),
         model_type=model,
         features_used=features,
-        training_data=str(train_dir / "train.tsv"),
+        training_data=str(train_dir / "train.parquet"),
         test_dir=str(test_dir)
     )
     write_metadata_yaml(metadata, output_dir)

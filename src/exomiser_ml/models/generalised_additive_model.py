@@ -6,6 +6,7 @@ import joblib
 from interpret.glassbox import ExplainableBoostingClassifier
 
 from exomiser_ml.post_process.post_process import post_process_test_dir
+from exomiser_ml.utils.io import read_result, write_result
 from exomiser_ml.utils.write_metadata import RunMetadata, write_metadata_yaml
 from pheval.utils.file_utils import all_files
 import math
@@ -13,9 +14,9 @@ from bisect import bisect_right
 
 # ---------- TRAIN ----------
 def train_gam(training_data: Path, features: List[str], output_dir: Path):
-    df = pl.read_csv(training_data, separator="\t", infer_schema_length=0)
+    df = read_result(training_data)
     df = df.with_columns(
-        (df["CAUSATIVE_VARIANT"].str.to_lowercase() == "true")
+        (df["CAUSATIVE_VARIANT"].cast(pl.Utf8).str.to_lowercase() == "true")
         .cast(pl.Int8)
         .alias("CAUSATIVE_VARIANT")
     )
@@ -52,7 +53,7 @@ def train_and_test_gam(
     ebm = train_gam(training_data=training_data, features=features, output_dir=output_dir)
     raw_results_dir.mkdir(parents=True, exist_ok=True)
     for test_file in all_files(test_dir):
-        df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
+        df = read_result(test_file)
         X_test = df.select(features).to_numpy()
         probs = ebm.predict_proba(X_test)[:, 1]  # probability of class 1
         new_scores = pl.DataFrame({"NEW_SCORE": probs})
@@ -60,7 +61,7 @@ def train_and_test_gam(
             print(f"Warning: 'NEW_SCORE' already exists in {test_file}. Replacing it.")
             df = df.drop("NEW_SCORE")
         df_with_new_scores = df.hstack(new_scores)
-        df_with_new_scores.write_csv(raw_results_dir.joinpath(test_file.name), separator="\t")
+        write_result(df_with_new_scores, raw_results_dir.joinpath(test_file.name))
 
     # Post-process
     post_process_test_dir(
@@ -185,6 +186,14 @@ def ebm_predict_proba_row(row, payload):
 
     return _inv_link(z, payload["link"])
 
+def safe_predict(row, payload):
+    try:
+        return ebm_predict_proba_row(row, payload)
+    except Exception as e:
+        print("⚠️ Offending row:", row)
+        print("Exception:", e)
+        raise
+
 def manual_predict_ebm(payload_path: Path, test_dir: Path, output_dir: Path, phenopacket_dir: Path):
     with open(payload_path) as f:
         payload = json.load(f)
@@ -194,17 +203,17 @@ def manual_predict_ebm(payload_path: Path, test_dir: Path, output_dir: Path, phe
     output_dir.joinpath("pheval_variant_results").mkdir(parents=True, exist_ok=True)
     feature_cols = payload["feature_names"]
     for test_file in all_files(test_dir):
-        df = pl.read_csv(test_file, separator="\t", infer_schema_length=0)
+        df = read_result(test_file)
         if "NEW_SCORE" in df.columns:
             print(f"Warning: 'NEW_SCORE' already exists in {test_file}. Replacing it.")
             df = df.drop("NEW_SCORE")
         df = df.with_columns(
             pl.struct(feature_cols).map_elements(
-                lambda row: ebm_predict_proba_row(row, payload),  # your scorer
+                lambda row: safe_predict(row, payload),
                 return_dtype=pl.Float64
-            ).alias("NEW_SC0RE")
+            ).alias("NEW_SCORE")  # fixed typo here from NEW_SC0RE
         )
-        df.write_csv(output_dir.joinpath(test_file.name), separator="\t")
+        write_result(df, raw_results_dir.joinpath(test_file.name))
     post_process_test_dir(
         test_dir=raw_results_dir,
         phenopacket_dir=phenopacket_dir,

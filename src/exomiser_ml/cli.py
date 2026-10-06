@@ -12,7 +12,7 @@ from exomiser_ml.post_process.post_process import post_process_test_dir
 
 training_data_option = click.option(
     '--training-data', '-t', type=Path, required=True,
-    help="Path to the training data tsv."
+    help="Path to the training data (parquet or tsv)."
 )
 
 test_dir_option = click.option(
