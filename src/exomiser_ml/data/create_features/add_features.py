@@ -2,23 +2,10 @@ from pathlib import Path
 
 import polars as pl
 from pheval.utils.file_utils import all_files
-from enum import Enum
 
 from exomiser_ml.data.create_features.calculate_acmg_ppp import ACMGPPPCalculator
 from exomiser_ml.data.create_features.get_causative_variant import extract_causative_variants
 from exomiser_ml.utils.io import find_exomiser_result, read_result, write_result, EXOMISER_PARQUET_FILE_SUFFIX
-
-class ModeOfInheritance(Enum):
-    AUTOSOMAL_DOMINANT = 1
-    AD = 1
-    AUTOSOMAL_RECESSIVE = 2
-    AR = 2
-    X_DOMINANT = 1
-    XD = 1
-    X_RECESSIVE = 2
-    XR = 2
-    MITOCHONDRIAL = 3
-    MT = 3
 
 def get_result(phenopacket_path: Path, result_dir: Path) -> pl.DataFrame:
     return read_result(find_exomiser_result(result_dir, phenopacket_path.stem))
@@ -27,7 +14,7 @@ def get_result(phenopacket_path: Path, result_dir: Path) -> pl.DataFrame:
 def label_variant(phenopacket_path: Path, result: pl.DataFrame) -> pl.DataFrame:
     causative_variants = extract_causative_variants(phenopacket_path)
     return result.with_columns([
-        pl.col("ID").map_elements(lambda x: any(variant in x for variant in causative_variants),
+        pl.col("variant").map_elements(lambda x: any(variant in x for variant in causative_variants),
                                   return_dtype=pl.Boolean)
         .alias("CAUSATIVE_VARIANT")
     ])
@@ -38,37 +25,23 @@ def add_features(phenopacket_dir: Path, result_dir: Path, output_dir: Path, filt
     acmg_calculater = ACMGPPPCalculator()
     for phenopacket_path in all_files(phenopacket_dir):
         result = get_result(phenopacket_path, result_dir)
-        result = result.with_columns([
-            pl.col("EXOMISER_ACMG_EVIDENCE").fill_null(""),
-            pl.col("MAX_PATH").fill_null(0),
-            pl.col("MAX_FREQ").fill_null(0),
-        ])
+
         labelled_variant = label_variant(phenopacket_path, result)
         acmg_ppp = labelled_variant.with_columns([
-            pl.col("EXOMISER_ACMG_EVIDENCE").map_elements(
+            pl.col("acmgEvidence").map_elements(
                 lambda x: acmg_calculater.compute_posterior(x, filter_clinvar, filter_bs4, filter_pp4),
                 return_dtype=pl.Float64
             ).alias("ACMG_PPP")
         ])
+        # Compound het / homozygous recessive variants share the mean ACMG_PPP of the contributing variants in the
+        # gene, only averaging over contributing rows of the same MOI.
+        recessive_contributing = pl.col("isContributingVariant") & pl.col("moi").is_in(["AR", "XR"])
         acmg_ppp = acmg_ppp.with_columns(
-            pl.col("MOI")
-            .map_elements(
-                lambda moi: ModeOfInheritance[moi].value,
-                return_dtype=pl.Int8,
-            )
-            .alias("moi_enum")
-        ).with_columns(
-            (pl.col("moi_enum") == 2).alias("is_recessive")
-        )
-        acmg_ppp = acmg_ppp.with_columns(
-            pl.when(
-                (pl.col("is_recessive"))
-                & (pl.col("CONTRIBUTING_VARIANT").cast(pl.Int64) == 1)  # noqa: E712
-            )
+            pl.when(recessive_contributing)
             .then(
-                pl.col("ACMG_PPP")
+                pl.when(recessive_contributing).then(pl.col("ACMG_PPP"))
                 .mean()
-                .over("GENE_SYMBOL")
+                .over(["geneSymbol", "moi"])
             )
             .otherwise(pl.col("ACMG_PPP"))
             .alias("ACMG_PPP_AVE")

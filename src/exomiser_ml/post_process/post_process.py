@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 import uuid
 from pheval.post_processing.post_processing import generate_variant_result, SortOrder
@@ -156,6 +157,6 @@ def post_process_test_dir(test_dir: Path, phenopacket_dir: Path, output_dir: Pat
                                 phenopacket_dir=phenopacket_dir,
                                 sort_order=SortOrder.DESCENDING,
                                 output_dir=output_dir,
-                                result_path=Path(output_file.name.replace("-exomiser.variants", "")))
+                                result_path=Path(re.sub(r"-exomiser(\.variants)?", "", output_file.name)))
 
 

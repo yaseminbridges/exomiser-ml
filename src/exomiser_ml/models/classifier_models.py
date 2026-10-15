@@ -38,7 +38,7 @@ def train_model(
         model_path: Path) -> ClassifierMixin:
     training_data_df = read_result(training_data)
     training_data_df = training_data_df.filter(
-        pl.col("CONTRIBUTING_VARIANT").cast(pl.Int64) == 1  # noqa
+        pl.col("isContributingVariant") == True  # noqa
     )
     X = training_data_df.select(features)
     y = training_data_df.select(["CAUSATIVE_VARIANT"])

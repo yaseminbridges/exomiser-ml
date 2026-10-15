@@ -41,6 +41,11 @@ class ACMGPPPCalculator:
 
     @staticmethod
     def normalize_input(acmg_evidence) -> Union[List[str], bool]:
+        # Native Exomiser parquet stores evidence as a list column, which polars passes as a Series
+        if acmg_evidence is None:
+            return False
+        if not isinstance(acmg_evidence, str):
+            return [str(e) for e in acmg_evidence]
         # Remove brackets and extra spaces, then split by space or comma
         try:
             acmg_evidence = re.sub(r'[\[\]]', '', acmg_evidence).strip()
@@ -93,7 +98,7 @@ class ACMGPPPCalculator:
 
     def compute_posterior(self, evidence_string: str, filter_clinvar: bool, filter_bs4: bool, filter_pp4: bool) -> float:
         normalized = self.normalize_input(evidence_string)
-        if not normalized:
+        if normalized is False:
             return 0  # Or 0.0 or np.nan depending on your context
         points = sum(self.parse_evidence(e, filter_clinvar, filter_bs4, filter_pp4) for e in normalized)
         return self.calc_post_prob_path(points)
